@@ -26,18 +26,15 @@ namespace Blog_Site.Repository
 
         public async Task<Blog> GetBlogByIdAsync(int id)
         {
-            var blog = await _context.Blogs.FirstOrDefaultAsync(b => b.Id == id);
-            if (blog == null)
-            {
-                return null;
-            }
+            var blog = await _context.Blogs.Include(b => b.Comments).FirstOrDefaultAsync(b => b.Id == id);
 
             return blog;
         }
 
         public async Task<List<Blog>> GetBlogsByUserIdAsync(int userId)
         {
-            throw new NotImplementedException();
+            var blogs = await _context.Blogs.Where(b => b.AuthorId == userId).ToListAsync();
+            return blogs;
         }
     }
 }

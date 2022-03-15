@@ -34,6 +34,18 @@ namespace Blog_Site.Controllers
             return Ok(blog);
         }
 
+        [HttpGet("user_blogs/{userId}")]
+        public async Task<ActionResult<List<Blog>>> GetByUserId(int userId)
+        {
+            var blogs = await _blogRepository.GetBlogsByUserIdAsync(userId);
+            if(blogs == null)
+            {
+                return BadRequest("The user has not written any blogs");
+            }
+
+            return Ok(blogs);
+        }
+
         [HttpPost]
         public async Task<ActionResult<Blog>> CreateBlog(Blog blog)
         {
