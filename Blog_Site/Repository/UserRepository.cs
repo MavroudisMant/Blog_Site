@@ -1,6 +1,8 @@
 ﻿using Blog_Site.Data;
 using Blog_Site.Interfaces;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Security.Cryptography;
 
 namespace Blog_Site.Repository
@@ -8,42 +10,103 @@ namespace Blog_Site.Repository
     public class UserRepository : IUserRepository
     {
         private readonly DataContext _context;
+        private readonly IConfiguration _config;
 
-        public UserRepository(DataContext context)
+        public UserRepository(DataContext context, IConfiguration config)
         {
             _context = context;
+            _config = config;
         }
 
-        public Task<User> Edit(User user)
+        public async Task<User> EditNameAsync(User userReq)
         {
-            throw new NotImplementedException();
+            User user = await _context.Users.Where(u => u.Id == userReq.Id).FirstOrDefaultAsync();
+            if(user == null)
+            {
+                return null;
+            }
+
+            user.UserName = userReq.UserName;
+            _context.Update(user);
+            await _context.SaveChangesAsync();
+
+            return user;
         }
 
-        public Task<User> Login(string username, string password)
+        public async Task<User> EditPasswordAsync(User userReq)
         {
-            throw new NotImplementedException();
-        }
+            User user = await _context.Users.Where(u => u.Id == userReq.Id).FirstOrDefaultAsync();
+            if (user == null)
+            {
+                return null;
+            }
 
-        public async Task<User> Register(User user)
-        {
-            (string hashedPW, byte[] salt) = passwordHash(user.Password);
+            string hashedPW = passwordHash(userReq.Password, user.PasswordSalt);
             user.Password = hashedPW;
-            user.PasswordSalt = salt;
-            _context.Add(user);
+            _context.Update(user);
             await _context.SaveChangesAsync();
             return user;
         }
 
-
-        private (string, byte[]) passwordHash(string password)
+        public async Task<string> LoginAsync(string username, string password)
         {
-            byte[] salt = new byte[128 / 8];
-            using (var rng = new RNGCryptoServiceProvider())
+            User user = await _context.Users.Where(u => u.UserName == username).FirstOrDefaultAsync();
+
+            if (user != null)
             {
-                rng.GetNonZeroBytes(salt);
+                string hashedPW = passwordHash(password, user.PasswordSalt);
+                if (hashedPW == user.Password)
+                {
+                    var claims = new[]
+                    {
+                        new Claim(JwtRegisteredClaimNames.Sub, _config["Jwt:Subject"]),
+                        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                        new Claim(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString()),
+                        new Claim(ClaimTypes.PrimarySid, user.Id.ToString()),
+                        new Claim(ClaimTypes.Name, user.UserName),
+                        new Claim(ClaimTypes.Role, user.Type)
+                    };
+
+                    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
+                    var signIn = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+                    var token = new JwtSecurityToken(
+                        _config["Jwt:Issuer"],
+                        _config["Jwt:Audience"],
+                        claims,
+                        expires: DateTime.UtcNow.AddHours(2),
+                        signingCredentials: signIn);
+
+                    return new JwtSecurityTokenHandler().WriteToken(token);
+                }
+            }
+            
+            return null;
+        }
+
+        public async Task<User> RegisterAsync(User user)
+        {
+            User exUser = await _context.Users.Where(u => u.UserName == user.UserName).FirstOrDefaultAsync();
+            if (exUser == null)
+            {
+                byte[] salt = new byte[128 / 8];
+                using (var rng = new RNGCryptoServiceProvider())
+                {
+                    rng.GetNonZeroBytes(salt);
+                }
+                string hashedPW = passwordHash(user.Password, salt);
+                user.Password = hashedPW;
+                user.PasswordSalt = salt;
+                _context.Add(user);
+                await _context.SaveChangesAsync();
+                return user; 
             }
 
+            return null;
+        }
 
+
+        private string passwordHash(string password, byte[] salt)
+        {
             string hashedPW = Convert.ToBase64String(KeyDerivation.Pbkdf2(
                 password: password,
                 salt: salt,
@@ -51,7 +114,7 @@ namespace Blog_Site.Repository
                 iterationCount: 1000,
                 numBytesRequested: 256 / 8));
 
-            return (hashedPW, salt);
+            return hashedPW;
         }
     }
 }
