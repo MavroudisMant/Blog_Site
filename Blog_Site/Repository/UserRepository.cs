@@ -48,13 +48,13 @@ namespace Blog_Site.Repository
             return user;
         }
 
-        public async Task<string> LoginAsync(string username, string password)
+        public async Task<UserCon> LoginAsync(UserCon userCon)
         {
-            User user = await _context.Users.Where(u => u.UserName == username).FirstOrDefaultAsync();
+            User user = await _context.Users.Where(u => u.UserName == userCon.UserName).FirstOrDefaultAsync();
 
             if (user != null)
             {
-                string hashedPW = passwordHash(password, user.PasswordSalt);
+                string hashedPW = passwordHash(userCon.Password, user.PasswordSalt);
                 if (hashedPW == user.Password)
                 {
                     var claims = new[]
@@ -76,7 +76,11 @@ namespace Blog_Site.Repository
                         expires: DateTime.UtcNow.AddHours(2),
                         signingCredentials: signIn);
 
-                    return new JwtSecurityTokenHandler().WriteToken(token);
+                    string strToken = new JwtSecurityTokenHandler().WriteToken(token);
+                    userCon.Token = strToken;
+                    userCon.Password = "";
+
+                    return userCon;
                 }
             }
             

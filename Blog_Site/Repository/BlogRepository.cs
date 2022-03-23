@@ -18,7 +18,6 @@ namespace Blog_Site.Repository
             await _context.SaveChangesAsync();
             return blog;
         }
-
         public async Task<List<Blog>> GetAllBlogsAsync()
         {
             return await _context.Blogs.ToListAsync();

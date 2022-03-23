@@ -1,5 +1,6 @@
 ﻿using Blog_Site.Data;
 using Blog_Site.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -25,6 +26,7 @@ namespace Blog_Site.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Blog>> GetById(int id)
         {
+            string token = Request.Headers["Authorization"];
             var blog = await _blogRepository.GetBlogByIdAsync(id);
             if (blog == null)
             {
@@ -47,6 +49,7 @@ namespace Blog_Site.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "writer")]
         public async Task<ActionResult<Blog>> CreateBlog(Blog blog)
         {
             blog = await _blogRepository.CreateBlogAsync(blog);

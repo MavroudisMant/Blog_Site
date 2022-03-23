@@ -1,4 +1,5 @@
 ﻿using Blog_Site.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -27,17 +28,18 @@ namespace Blog_Site.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<ActionResult<string>> LogIn(string userName, string password)
+        public async Task<ActionResult<UserCon>> LogIn(UserCon user)
         {
-            string token = await _userRepository.LoginAsync(userName, password);
-            if(token == null)
+            user = await _userRepository.LoginAsync(user);
+            if(user == null)
             {
                 return BadRequest("No user exists");
             }
-            return Ok(token);
+            return Ok(user);
         }
 
         [HttpPut("edit_name")]
+        [Authorize]
         public async Task<ActionResult<User>> EditName(User user)
         {
             user = await _userRepository.EditNameAsync(user);
@@ -50,6 +52,7 @@ namespace Blog_Site.Controllers
         }
 
         [HttpPut("edit_password")]
+        [Authorize]
         public async Task<ActionResult<User>> EditPassword(User user)
         {
             user = await _userRepository.EditPasswordAsync(user);
