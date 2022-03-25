@@ -18,7 +18,7 @@ namespace Models
         [Column(TypeName = "nvarchar(max)")]
         public string Body { get; set; } = string.Empty;
         [Required]
-        public int AuthorId { get; set; }
+        public User Author { get; set; }
         public ICollection<Comment>? Comments { get; set; }
         [Required]
         public int Upvotes { get; set; } = 0;

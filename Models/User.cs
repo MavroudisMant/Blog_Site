@@ -24,7 +24,6 @@ namespace Models
         [MaxLength(128)]
         public byte[]? PasswordSalt { get; set; }
         public ICollection<Comment>? Comments { get; set; }
-        [ForeignKey("AuthorId")]
         public ICollection<Blog>? Blogs { get; set; }
 
     }

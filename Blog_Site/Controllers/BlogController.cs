@@ -18,7 +18,7 @@ namespace Blog_Site.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<Blog>>> GetAll()
+        public async Task<ActionResult<List<BlogInfo>>> GetAll()
         {
             return Ok(await _blogRepository.GetAllBlogsAsync());
         }
