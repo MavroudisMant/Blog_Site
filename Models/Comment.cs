@@ -12,7 +12,12 @@ namespace Models
     {
         public int Id { get; set; }
         [Required]
+        public int Blog_Id { get; set; }
+        [Required]
+        public int User_Id { get; set; }
+        [Required]
         [Column(TypeName = "nvarchar(max)")]
         public string Body { get; set; } = string.Empty;
+        
     }
 }

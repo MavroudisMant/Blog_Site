@@ -40,5 +40,33 @@ namespace Blog_Site.Repository
             var blogs = await _context.Blogs.Where(b => b.Author.Id == userId).ToListAsync();
             return blogs;
         }
+
+        public async void DeleteBlog(int id)
+        {
+            var blog = await GetBlogByIdAsync(id);
+            _context.Blogs.Remove(blog);
+            await _context.SaveChangesAsync();
+
+        }
+
+        public async Task<Blog> UpdateBlogAsync(Blog blog)
+        {
+            var dblog = await GetBlogByIdAsync(blog.Id);
+            dblog.Body = blog.Body;
+            dblog.Title = blog.Title;
+
+            await _context.SaveChangesAsync();
+
+            return dblog;
+        }
+
+        public async Task<Blog> RateBlogAsync(int id)
+        {
+            var dblog = await _context.Blogs.Where(b => b.Id == id).FirstOrDefaultAsync();
+            dblog.Upvotes = dblog.Upvotes + 1;
+
+            await _context.SaveChangesAsync();
+            return dblog;
+        }
     }
 }

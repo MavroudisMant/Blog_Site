@@ -55,5 +55,47 @@ namespace Blog_Site.Controllers
             blog = await _blogRepository.CreateBlogAsync(blog);
             return Ok(blog);
         }
+
+        //edit the title and body of the blog
+        [HttpPut]
+        public async Task<ActionResult<List<Blog>>> UpdateBlog(Blog blog)
+        {
+            var dbblog = await _blogRepository.GetBlogByIdAsync(blog.Id);
+            if (dbblog == null)
+                return BadRequest("blog doesn't exist");
+            else
+                await _blogRepository.UpdateBlogAsync(blog);
+            
+
+            return Ok(await _blogRepository.GetAllBlogsAsync());
+        }
+
+        //delete a blog
+        [HttpDelete("blog")]
+        public async Task<ActionResult<List<Blog>>> DeleteBlog(int blogId)
+        {
+            var blog = await _blogRepository.GetBlogByIdAsync(blogId);
+            if (blog == null)
+                return BadRequest("Blog doesn't exist");
+            else
+                _blogRepository.DeleteBlog(blog.Id);
+
+            return Ok(await _blogRepository.GetAllBlogsAsync());
+
+
+        }
+
+        //add rating to the blog
+        [HttpPut("rating")]
+        public async  Task<ActionResult<Blog>> RateBlog(int id)
+        {
+            var dblog = await _blogRepository.GetBlogByIdAsync(id);
+            if (dblog == null)
+                return BadRequest("Blog doesn't exist");
+            else
+                await _blogRepository.RateBlogAsync(dblog.Id);
+
+            return Ok(await _blogRepository.GetBlogByIdAsync(id));
+        }
     }
 }
